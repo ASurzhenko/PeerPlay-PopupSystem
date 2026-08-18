@@ -8,7 +8,7 @@ PlayerSettings:
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
-  defaultScreenOrientation: 4
+  defaultScreenOrientation: 0
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
@@ -62,9 +62,9 @@ PlayerSettings:
   androidShowActivityIndicatorOnLoading: -1
   iosUseCustomAppBackgroundBehavior: 0
   allowedAutorotateToPortrait: 1
-  allowedAutorotateToPortraitUpsideDown: 1
-  allowedAutorotateToLandscapeRight: 1
-  allowedAutorotateToLandscapeLeft: 1
+  allowedAutorotateToPortraitUpsideDown: 0
+  allowedAutorotateToLandscapeRight: 0
+  allowedAutorotateToLandscapeLeft: 0
   useOSAutorotation: 1
   use32BitDisplayBuffer: 1
   preserveFramebufferAlpha: 0
@@ -144,7 +144,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 1.0
+  bundleVersion: 1.0.0
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
@@ -530,7 +530,10 @@ PlayerSettings:
   m_BuildTargetGroupLightmapSettings: []
   m_BuildTargetGroupLoadStoreDebugModeSettings: []
   m_BuildTargetNormalMapEncoding: []
-  m_BuildTargetDefaultTextureCompressionFormat: []
+  m_BuildTargetDefaultTextureCompressionFormat:
+  - serializedVersion: 3
+    m_BuildTarget: Android
+    m_Formats: 01000000
   playModeTestRunnerEnabled: 0
   runPlayModeTestAsEditModeTest: 0
   actionOnDotNetUnhandledException: 1
@@ -796,7 +799,25 @@ PlayerSettings:
   webGLWebAssemblyBigInt: 0
   webGLCloseOnQuit: 0
   webWasm2023: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Android: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES;UNITASK_DOTWEEN_SUPPORT
+    EmbeddedLinux: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    GameCoreScarlett: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    GameCoreXboxOne: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    Kepler: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    LinuxHeadlessSimulation: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    Nintendo Switch: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    Nintendo Switch 2: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    PS4: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    PS5: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    QNX: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    Standalone: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    VisionOS: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    WebGL: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    Windows Store Apps: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    XboxOne: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    iPhone: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
+    tvOS: DOTWEEN;DOTWEEN_NOAUDIO;DOTWEEN_NOPHYSICS;DOTWEEN_NOPHYSICS2D;DOTWEEN_NOSPRITES
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

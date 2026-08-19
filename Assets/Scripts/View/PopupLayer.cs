@@ -399,7 +399,7 @@ namespace PeerPlay.Popups.View
         // ---------------------------------------------------------------- runtime construction
 
         /// <summary>
-        /// Builds the hierarchy of §3.1 in code. The demo scene may author the same thing by hand; the
+        /// Builds the canvas, backdrop and content hierarchy in code. The demo scene may author the same thing by hand; the
         /// composition root and the suite use this so neither depends on a scene asset existing.
         /// </summary>
         internal static PopupLayer CreateRuntime(string name = "PopupLayer")

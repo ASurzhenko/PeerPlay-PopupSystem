@@ -14,18 +14,28 @@ namespace PeerPlay.Popups.Sourcing
         internal const int MaxAttempts = 3;
 
         /// <summary>
-        /// The per-request timeout the caller passes must stay STRICTLY below this. Raise it to 8 and the
-        /// deadline fires first every time: the per-request timeout becomes dead code, and the system
-        /// behaves correctly for the wrong reason — permanently, and quietly, because both bounds resolve
-        /// to the same visible outcome.
+        /// The whole-operation budget. The per-request timeout must stay STRICTLY below it, or the deadline
+        /// fires first every time: the per-request timeout becomes dead code and the system behaves
+        /// correctly for the wrong reason — permanently, and quietly, because both bounds resolve to the
+        /// same visible outcome. <see cref="MaxRequestTimeoutSeconds"/> is that ordering, enforced.
         /// </summary>
         internal static readonly TimeSpan Deadline = TimeSpan.FromSeconds(8);
+
+        /// <summary>Derived from the deadline, so raising one moves the other instead of silently crossing it.</summary>
+        internal static readonly int MaxRequestTimeoutSeconds = (int)Deadline.TotalSeconds - 1;
 
         private static readonly TimeSpan[] Backoff =
         {
             TimeSpan.FromSeconds(0.5),
             TimeSpan.FromSeconds(1.5)
         };
+
+        /// <summary>
+        /// Indexed by <c>attempt</c>, so the table has to hold one entry per gap between attempts. Raising
+        /// <see cref="MaxAttempts"/> without extending it is an index error at the third failure, and
+        /// nothing in the code says so — which is what the test asserting this equality is for.
+        /// </summary>
+        internal static int BackoffCount => Backoff.Length;
 
         private readonly IHttpClient _inner;
         private readonly IDelayProvider _delays;
@@ -57,8 +67,38 @@ namespace PeerPlay.Popups.Sourcing
                 || failure == HttpFailure.Http5xx;
         }
 
-        private async UniTask<HttpResult> RunAsync(string url, int timeoutSeconds, bool texture, CancellationToken ct)
+        /// <summary>Below this the request has no per-request bound at all — see <see cref="ClampTimeout"/>.</summary>
+        internal const int MinRequestTimeoutSeconds = 1;
+
+        /// <summary>
+        /// Holds the per-request timeout inside the range where it can actually fire, and says so when it
+        /// has to move it. Both ends matter, and they fail the same way — the inner bound stops existing:
+        /// at or above the deadline the deadline always wins first, and <b>zero or less is UnityWebRequest's
+        /// "no timeout"</b>, which is the hole this whole clamp exists to close rather than one to leave at
+        /// the other end of the range.
+        /// </summary>
+        internal static int ClampTimeout(int timeoutSeconds, string url)
         {
+            if (timeoutSeconds >= MinRequestTimeoutSeconds && timeoutSeconds <= MaxRequestTimeoutSeconds)
+            {
+                return timeoutSeconds;
+            }
+
+            int clamped = timeoutSeconds < MinRequestTimeoutSeconds
+                ? MinRequestTimeoutSeconds
+                : MaxRequestTimeoutSeconds;
+
+            Debug.LogWarning($"{nameof(HttpWithRetry)}.{nameof(ClampTimeout)} per-request timeout " +
+                             $"{timeoutSeconds}s is outside [{MinRequestTimeoutSeconds}, " +
+                             $"{MaxRequestTimeoutSeconds}]s, where it can fire before the " +
+                             $"{Deadline.TotalSeconds}s deadline; clamped to {clamped}s — {url}");
+            return clamped;
+        }
+
+        private async UniTask<HttpResult> RunAsync(string url, int rawTimeoutSeconds, bool texture, CancellationToken ct)
+        {
+            int timeoutSeconds = ClampTimeout(rawTimeoutSeconds, url);
+
             using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct))
             using (_delays.CancelAfter(cts, Deadline))
             {

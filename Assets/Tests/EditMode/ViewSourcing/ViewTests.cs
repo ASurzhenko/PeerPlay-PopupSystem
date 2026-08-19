@@ -11,9 +11,9 @@ using UnityEngine.UI;
 namespace PeerPlay.Popups.ViewSourcing.Tests
 {
     /// <summary>
-    /// The view layer's floor. V6, V7 and V8 exist because two independent review rounds found the input
-    /// gate, the backdrop and the resume reposition described but unreachable — each of these fails if its
-    /// one call site is deleted, which is the only thing that keeps a mechanism alive.
+    /// The view layer's floor. V6, V7 and V8 exist because the input gate, the backdrop and the resume
+    /// reposition were each described and unreachable at some point — each of these fails if its one call
+    /// site is deleted, which is the only thing that keeps a mechanism alive.
     /// </summary>
     internal sealed class ViewTests
     {

@@ -162,8 +162,8 @@ namespace PeerPlay.Popups.View
 
         /// <summary>
         /// Authoring hook for the suite. The prefab Inspector is the normal route; this exists so a test
-        /// does not need a prefab asset on disk, and it re-captures the authored values so the
-        /// override-then-drop path (V1c) is exercised against real ones.
+        /// does not need a prefab asset on disk, and it re-captures the authored values so the path that
+        /// applies a config override and then drops it is exercised against real ones.
         /// </summary>
         internal void AuthorForTests(PopupModality modality, PopupSuspendBehaviour suspend, string transitionId,
                                      bool dismissible = true, bool dismissOnBackdropTap = true,

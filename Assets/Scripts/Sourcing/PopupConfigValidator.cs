@@ -199,10 +199,18 @@ namespace PeerPlay.Popups.Sourcing
             return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed) && parsed >= 0;
         }
 
+        /// <summary>
+        /// A warning, not an error, and the distinction is the whole design: refusing a bad payload is this
+        /// class working, and the config that was already live keeps serving. Only the caller knows whether
+        /// anything was left to serve — <c>RemotePopupConfigService.AdoptBestAvailable</c> raises an error
+        /// for the one case that is genuinely lost, a boot with no usable cache and no usable built-in.
+        /// Logging every refusal at error level would page someone for the mechanism succeeding, and would
+        /// bury that one real case in the noise.
+        /// </summary>
         private static bool Reject(string why, out string reason)
         {
             reason = why;
-            Debug.LogError($"{nameof(PopupConfigValidator)}.{nameof(TryValidateStructure)} [Config] rejected: {why}");
+            Debug.LogWarning($"{nameof(PopupConfigValidator)}.{nameof(TryValidateStructure)} [Config] rejected: {why}");
             return false;
         }
     }

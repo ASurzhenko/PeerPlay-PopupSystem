@@ -10,7 +10,7 @@ namespace PeerPlay.Popups.View
     /// object per popup with an editor window over it: that answers nothing the spec asked for.
     ///
     /// The transition, the modality and the suspend mode are deliberately NOT authored here. They live on
-    /// the prefab, and this type only carries the remote config's override of them (§2.4.6).
+    /// the prefab, and this type only carries the remote config's override of them.
     /// </summary>
     [CreateAssetMenu(menuName = "PeerPlay/Popup Catalog", fileName = "PopupCatalog")]
     public sealed class PopupCatalog : ScriptableObject, IPopupCatalogWriter

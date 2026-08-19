@@ -195,8 +195,10 @@ namespace PeerPlay.Popups.Sourcing
 
             if (!response.Ok || response.Data == null)
             {
+                // Warning: the publish did not arrive, and whatever was adopted before is still serving.
+                // The level tracks the consequence, not the event — see Reject in PopupConfigValidator.
                 string why = $"fetch failed ({response.Failure}: {response.Error})";
-                Debug.LogError($"{nameof(RemotePopupConfigService)}.{nameof(RefreshAsync)} [Config] {why}");
+                Debug.LogWarning($"{nameof(RemotePopupConfigService)}.{nameof(RefreshAsync)} [Config] {why}");
                 return ConfigFetchResult.Fail(why);
             }
 
@@ -204,7 +206,8 @@ namespace PeerPlay.Popups.Sourcing
 
             if (!_validator.TryValidateStructure(rawJson, out PopupConfigSnapshot snapshot, out string reason))
             {
-                // Loudly, and the current snapshot and the cache are both left exactly as they were.
+                // The validator has already logged the refusal as a warning, and the current snapshot and
+                // the cache are both left exactly as they were — which is why a warning is the right level.
                 return ConfigFetchResult.Fail(reason);
             }
 
@@ -224,8 +227,10 @@ namespace PeerPlay.Popups.Sourcing
 
             if (!resolved)
             {
-                Debug.LogError($"{nameof(RemotePopupConfigService)}.{nameof(RefreshAsync)} " +
-                               "[Config] rejected: an assetId resolves to no location");
+                // Same rule as every other refusal on this path: the payload is dropped, the live config is
+                // untouched, so this is a warning rather than an error.
+                Debug.LogWarning($"{nameof(RemotePopupConfigService)}.{nameof(RefreshAsync)} " +
+                                 "[Config] rejected: an assetId resolves to no location");
                 return ConfigFetchResult.Fail("asset resolution failed");
             }
 

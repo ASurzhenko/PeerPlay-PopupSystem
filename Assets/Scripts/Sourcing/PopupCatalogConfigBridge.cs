@@ -9,7 +9,7 @@ namespace PeerPlay.Popups.Sourcing
     /// at boot included — translates each rule into a view DTO and pushes the whole set into the catalog.
     ///
     /// It lives here rather than inline in the composition root for one reason: a subscription written in
-    /// a MonoBehaviour's Awake cannot be tested, and this is a mechanism two review rounds found dead. The
+    /// a MonoBehaviour's Awake cannot be tested, and this mechanism has been silently dead before. The
     /// reference graph is unaffected — the sourcing assembly already references the view assembly, and the
     /// view assembly still knows nothing about configuration.
     /// </summary>

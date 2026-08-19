@@ -101,6 +101,9 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         /// <summary>Every url asked for, in order — the half that proves WHICH endpoint a request went to.</summary>
         internal readonly List<string> Urls = new List<string>();
 
+        /// <summary>The per-request timeout each attempt actually received, which is what the clamp changes.</summary>
+        internal readonly List<int> Timeouts = new List<int>();
+
         internal int RequestCount;
         internal int Aborts;
         internal bool Hold;
@@ -145,17 +148,18 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
 
         public UniTask<HttpResult> GetAsync(string url, int timeoutSeconds, CancellationToken ct)
         {
-            return RespondAsync(url, ct);
+            return RespondAsync(url, timeoutSeconds, ct);
         }
 
         public UniTask<HttpResult> GetTextureAsync(string url, int timeoutSeconds, CancellationToken ct)
         {
-            return RespondAsync(url, ct);
+            return RespondAsync(url, timeoutSeconds, ct);
         }
 
-        private async UniTask<HttpResult> RespondAsync(string url, CancellationToken ct)
+        private async UniTask<HttpResult> RespondAsync(string url, int timeoutSeconds, CancellationToken ct)
         {
             Urls.Add(url);
+            Timeouts.Add(timeoutSeconds);
             RequestCount++;
             ct.ThrowIfCancellationRequested();
 

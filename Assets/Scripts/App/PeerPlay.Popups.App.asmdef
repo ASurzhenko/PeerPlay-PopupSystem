@@ -1,0 +1,19 @@
+{
+    "name": "PeerPlay.Popups.App",
+    "rootNamespace": "PeerPlay.Popups.App",
+    "references": [
+        "PeerPlay.Popups",
+        "PeerPlay.Popups.View",
+        "PeerPlay.Popups.Sourcing",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

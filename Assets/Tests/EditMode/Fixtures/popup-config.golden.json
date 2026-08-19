@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "popups": [
+    {
+      "id": "offer_weekend",
+      "assetId": "popup_offer",
+      "state": "enabled",
+      "priority": "High",
+      "sequencing": "Queue",
+      "modality": "Modal",
+      "transition": "scale_pop",
+      "suspend": "Hide",
+      "imageUrl": "https://d2eupgfrfppc7x.cloudfront.net/peerplay/content/offer_weekend.png",
+      "titleKey": "offer.weekend.title",
+      "bodyKey": "offer.weekend.body",
+      "cooldownSeconds": "3600",
+      "maxPerSession": "1"
+    },
+    {
+      "id": "info",
+      "assetId": "popup_info",
+      "state": "enabled",
+      "priority": "Normal",
+      "sequencing": "Queue",
+      "modality": "Modal",
+      "transition": "fade",
+      "suspend": "Hide",
+      "imageUrl": "",
+      "titleKey": "info.title",
+      "bodyKey": "info.body",
+      "cooldownSeconds": "0",
+      "maxPerSession": "0"
+    }
+  ]
+}

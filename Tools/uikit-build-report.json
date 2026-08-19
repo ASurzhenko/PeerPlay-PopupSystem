@@ -1,0 +1,33 @@
+{
+  "status": "ok",
+  "error": null,
+  "steps": [
+    "sprite panel verified border=(64.00, 64.00, 64.00, 64.00) mesh=FullRect",
+    "sprite ribbon verified border=(70.00, 0.00, 70.00, 0.00) mesh=FullRect",
+    "sprite button_primary verified border=(40.00, 26.00, 40.00, 26.00) mesh=FullRect",
+    "sprite button_secondary verified border=(40.00, 26.00, 40.00, 26.00) mesh=FullRect",
+    "sprite close verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite ring verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite icon_coins verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite icon_info verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite icon_download verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite icon_warning verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite burst_gen verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite Effects/burst_512 verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite Effects/glow_small verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite Effects/ray_burst_128 verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite Effects/ring_glow_128 verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite Effects/shockwave_128 verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "sprite Effects/soft_glow_128 verified border=(0.00, 0.00, 0.00, 0.00) mesh=Tight",
+    "atlas verified Android: overridden=True format=ASTC_6x6",
+    "atlas verified iPhone: overridden=True format=ASTC_6x6",
+    "atlas verified Assets/Art/Generated/UIKit.spriteatlasv2 sprites=17 tightPacking=False rotation=False",
+    "font asset already present at Assets/Fonts/Fredoka SDF.asset",
+    "probe Assets/Config/popup_remote_probe.txt",
+    "catalog Assets/Config/PopupCatalog.asset entries=4",
+    "prefab Assets/Prefabs/Popups/popup_info.prefab view=InfoPopupView modality=Modal suspend=Hide transition=fade",
+    "prefab Assets/Prefabs/Popups/popup_confirm.prefab view=ConfirmPopupView modality=Modal suspend=Hide transition=fade",
+    "prefab Assets/Prefabs/Popups/popup_reward.prefab view=RewardPopupView modality=Modal suspend=Hide transition=scale_pop",
+    "prefab Assets/Prefabs/Popups/popup_offer.prefab view=OfferPopupView modality=Modal suspend=StayVisible transition=scale_pop"
+  ]
+}

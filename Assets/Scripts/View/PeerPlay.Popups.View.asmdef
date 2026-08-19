@@ -6,8 +6,8 @@
         "UniTask",
         "UniTask.DOTween",
         "DOTween.Modules",
-        "Unity.Addressables",
-        "Unity.ResourceManager"
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

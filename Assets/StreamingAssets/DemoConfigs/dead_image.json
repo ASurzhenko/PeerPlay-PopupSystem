@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "popups": [
+    {
+      "id": "info",
+      "assetId": "popup_info",
+      "state": "enabled",
+      "priority": "Normal",
+      "sequencing": "Queue",
+      "modality": "Modal",
+      "transition": "fade",
+      "suspend": "Hide",
+      "imageUrl": "",
+      "titleKey": "Info",
+      "bodyKey": "A local popup. Modal, dismissible, transition chosen by the config.",
+      "cooldownSeconds": "0",
+      "maxPerSession": "0"
+    },
+    {
+      "id": "info_modeless",
+      "assetId": "popup_info",
+      "state": "enabled",
+      "priority": "Normal",
+      "sequencing": "Queue",
+      "modality": "Modeless",
+      "transition": "fade",
+      "suspend": "Hide",
+      "imageUrl": "",
+      "titleKey": "Modeless popup",
+      "bodyKey": "No backdrop: the demo controls behind this popup still take input.",
+      "cooldownSeconds": "0",
+      "maxPerSession": "0"
+    },
+    {
+      "id": "stress",
+      "assetId": "popup_info",
+      "state": "enabled",
+      "priority": "Normal",
+      "sequencing": "Queue",
+      "modality": "Modeless",
+      "transition": "instant",
+      "suspend": "Hide",
+      "imageUrl": "",
+      "titleKey": "Stress key",
+      "bodyKey": "Modeless and instant, so a measured cycle contains no backdrop tween.",
+      "cooldownSeconds": "0",
+      "maxPerSession": "0"
+    },
+    {
+      "id": "offer_weekend",
+      "assetId": "popup_offer",
+      "state": "enabled",
+      "priority": "High",
+      "sequencing": "Queue",
+      "modality": "Modal",
+      "transition": "scale_pop",
+      "suspend": "StayVisible",
+      "imageUrl": "https://d2eupgfrfppc7x.cloudfront.net/peerplay/content/does-not-exist.png",
+      "titleKey": "Weekend offer",
+      "bodyKey": "The image URL is dead. The popup still opens and says the content is unavailable.",
+      "cooldownSeconds": "0",
+      "maxPerSession": "0"
+    },
+    {
+      "id": "capped_daily",
+      "assetId": "popup_info",
+      "state": "enabled",
+      "priority": "Normal",
+      "sequencing": "Queue",
+      "modality": "Modal",
+      "transition": "fade",
+      "suspend": "Hide",
+      "imageUrl": "",
+      "titleKey": "Daily cap",
+      "bodyKey": "maxPerSession is 1. Press the button again and the request is refused.",
+      "cooldownSeconds": "0",
+      "maxPerSession": "1"
+    }
+  ]
+}

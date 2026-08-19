@@ -456,6 +456,125 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
             Assert.IsTrue(File.Exists(CachePath), "fully validated, so it is cached");
         }
 
+        /// <summary>
+        /// The endpoint is mutable so a LIVE system can be pointed at another config — and mutability on its
+        /// own is a race: two requests can be in flight and the OLDER one can answer last. Here the second
+        /// answer lands first, so without the generation check the first endpoint's payload would be what
+        /// ends up adopted and cached, and the system would serve a config nobody asked for last.
+        /// </summary>
+        [Test]
+        public void C18_AnInFlightFetchCannotAdoptAfterTheEndpointMoved()
+        {
+            FakeHttp http = new FakeHttp { Hold = true };
+
+            RemotePopupConfigService service = new RemotePopupConfigService(
+                Text(ConfigJson.Golden()), new PopupConfigCache(CachePath), _validator, http,
+                new FakeCatalogProbe { Ready = true }, "https://cdn/old.json");
+
+            UniTask<ConfigFetchResult> first = service.RefreshAsync(CancellationToken.None);
+
+            service.ConfigUrl = "https://cdn/new.json";
+
+            UniTask<ConfigFetchResult> second = service.RefreshAsync(CancellationToken.None);
+
+            Assert.AreEqual(2, http.HeldCount, "both requests are genuinely in flight");
+            CollectionAssert.AreEqual(new[] { "https://cdn/old.json", "https://cdn/new.json" }, http.Urls,
+                                      "each went to the endpoint that was current when it started");
+
+            // The newer answer first, the older one after it — the ordering a second button press produces.
+            http.CompleteHeldAt(1, HttpResult.Success(200, Encoding.UTF8.GetBytes(ConfigJson.One(id: "from_new"))));
+            http.CompleteHeldAt(0, HttpResult.Success(200, Encoding.UTF8.GetBytes(ConfigJson.One(id: "from_old"))));
+
+            ConfigFetchResult newResult = second.GetAwaiter().GetResult();
+            ConfigFetchResult oldResult = first.GetAwaiter().GetResult();
+
+            Assert.IsTrue(newResult.Adopted, newResult.Reason);
+            Assert.AreEqual(ConfigFetchOutcome.Superseded, oldResult.Outcome,
+                            "the superseded request must not adopt, and must not read as a rejected config");
+            Assert.IsNotNull(oldResult.Reason, "and it says why rather than returning silently");
+
+            Assert.IsTrue(service.Current.TryGet("from_new", out _), "the new endpoint's payload is what serves");
+            Assert.IsFalse(service.Current.TryGet("from_old", out _));
+
+            string cached = File.ReadAllText(CachePath);
+            StringAssert.Contains("from_new", cached, "and what became the last known good");
+            StringAssert.DoesNotContain("from_old", cached, "the superseded payload landed nowhere");
+        }
+
+        /// <summary>
+        /// C18's supersede happens across the HTTP hop, so the FIRST generation check catches it and the
+        /// second one — the check sited immediately before Adopt and the cache write — is never reached.
+        /// Here the endpoint moves while the ASSET RESOLUTION is in flight, which is the only way into it.
+        ///
+        /// Delete the check before Adopt and this goes red: the older request completes last and would
+        /// otherwise adopt its payload over the newer one and cache it.
+        /// </summary>
+        [Test]
+        public void C19_AFetchSupersededDuringAssetResolutionAdoptsNothing()
+        {
+            FakeHttp http = new FakeHttp();
+            http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(ConfigJson.One(id: "from_old"))));
+            http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(ConfigJson.One(id: "from_new"))));
+
+            FakeCatalogProbe probe = new FakeCatalogProbe { Ready = true, Hold = true };
+
+            RemotePopupConfigService service = new RemotePopupConfigService(
+                Text(ConfigJson.Golden()), new PopupConfigCache(CachePath), _validator, http, probe,
+                "https://cdn/old.json");
+
+            // Its http answer already landed, so it is past the first check and parked on the resolution.
+            UniTask<ConfigFetchResult> first = service.RefreshAsync(CancellationToken.None);
+            Assert.AreEqual(1, probe.HeldCount, "the first request is held at the resolution hop");
+
+            service.ConfigUrl = "https://cdn/new.json";
+
+            UniTask<ConfigFetchResult> second = service.RefreshAsync(CancellationToken.None);
+            Assert.AreEqual(2, probe.HeldCount);
+
+            // Newer first, older after it: the ordering that lets a stale answer overwrite a fresh one.
+            probe.CompleteHeldAt(1, true);
+            probe.CompleteHeldAt(0, true);
+
+            ConfigFetchResult newResult = second.GetAwaiter().GetResult();
+            ConfigFetchResult oldResult = first.GetAwaiter().GetResult();
+
+            Assert.IsTrue(newResult.Adopted, newResult.Reason);
+            Assert.AreEqual(ConfigFetchOutcome.Superseded, oldResult.Outcome,
+                            "and it is reported as ignored, not as a config that was refused");
+
+            Assert.IsTrue(service.Current.TryGet("from_new", out _));
+            Assert.IsFalse(service.Current.TryGet("from_old", out _), "the stale payload was not adopted");
+
+            string cached = File.ReadAllText(CachePath);
+            StringAssert.Contains("from_new", cached);
+            StringAssert.DoesNotContain("from_old", cached, "and it was not written to the last known good");
+        }
+
+        /// <summary>
+        /// A superseded request must not be reported as a rejected config: the incident block's whole job is
+        /// to teach the difference, and a caller that can only read a bool has to print one word for both.
+        /// </summary>
+        [Test]
+        public void C20_TheThreeOutcomesAreDistinguishable()
+        {
+            ExpectRejectionLogs();
+
+            FakeHttp http = new FakeHttp();
+            http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(ConfigJson.Golden())));
+            http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes("{\"version\":1,\"popups\":[]}")));
+
+            RemotePopupConfigService service = new RemotePopupConfigService(
+                Text(ConfigJson.Golden()), new PopupConfigCache(CachePath), _validator, http,
+                new FakeCatalogProbe { Ready = true }, "https://cdn/config.json");
+
+            Assert.AreEqual(ConfigFetchOutcome.Adopted,
+                            service.RefreshAsync(CancellationToken.None).GetAwaiter().GetResult().Outcome);
+
+            ConfigFetchResult rejected = service.RefreshAsync(CancellationToken.None).GetAwaiter().GetResult();
+            Assert.AreEqual(ConfigFetchOutcome.Rejected, rejected.Outcome);
+            StringAssert.Contains("zero popups", rejected.Reason);
+        }
+
         // ------------------------------------------------------------------ the config to view path
 
         [Test]

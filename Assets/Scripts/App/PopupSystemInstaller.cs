@@ -49,12 +49,72 @@ namespace PeerPlay.Popups.App
         private ConfiguredPopupTrigger _trigger;
         private PopupTransitionRegistry _transitions;
         private PopupCatalogConfigBridge _catalogBridge;
+        private IPopupViewSource _source;
+
+        private bool _bootRefreshFinished;
+
+        /// <summary>
+        /// The one definition of where the last-known-good config lives. Static, because the demo's reset
+        /// runs before this component's Awake and cannot ask an instance. Two copies of this literal would
+        /// drift into a reset that deletes a file nobody reads — and PopupConfigCache.Delete is
+        /// File.Exists-guarded, so the wrong path fails silently and looks like it worked.
+        /// </summary>
+        internal static string CacheFilePath =>
+            Path.Combine(Application.persistentDataPath, "popup-config.json");
 
         public IPopupService Service => _service;
 
         public ConfiguredPopupTrigger Trigger => _trigger;
 
         public RemotePopupConfigService Config => _config;
+
+        /// <summary>The pool lives behind it, and pool occupancy is not something the public surface owes.</summary>
+        internal PooledPopupViewFactory Factory => _factory;
+
+        /// <summary>Null when this root runs local-only: there are no prefab refcounts to read then.</summary>
+        internal RefCountedViewSource RemoteSource => _source as RefCountedViewSource;
+
+        /// <summary>
+        /// The frequency counters are per-instance and outlive a config republish, so an account switch has
+        /// to be able to clear them — see <see cref="ConfigPopupPolicy.ResetSessionState"/>.
+        /// </summary>
+        internal ConfigPopupPolicy Policy => _policy;
+
+        /// <summary>
+        /// True once the boot refresh against the serialized endpoint has finished, adopted or not.
+        ///
+        /// It exists so nothing can point the config service somewhere else while that first fetch is in
+        /// flight: the boot fetch is what proves the remote source is real, and a demo that overwrites the
+        /// endpoint in its own Start would replace that proof with a fixture and never run the live path at
+        /// all.
+        /// </summary>
+        internal bool BootRefreshFinished => _bootRefreshFinished;
+
+        /// <summary>The boot refresh's own verdict, for a caller that wants to report it.</summary>
+        internal ConfigFetchResult BootResult { get; private set; }
+
+        /// <summary>
+        /// Which arm of AdoptBestAvailable carried the cold start — "cache" or "built-in" — captured in
+        /// Awake, before any network answer can overwrite it. Nothing can subscribe early enough to observe
+        /// that adoption, so without this the branch that ran is unknowable from outside.
+        /// </summary>
+        internal string ColdStartSource { get; private set; }
+
+        /// <summary>The endpoint this scene boots against, so a caller needs no second copy of the literal.</summary>
+        internal string LiveConfigUrl => _configUrl;
+
+        /// <remarks>
+        /// A fresh task per caller, polled a frame at a time, rather than one shared UniTaskCompletionSource:
+        /// that type registers a single continuation and throws on the second awaiter, and two components
+        /// here wait for this.
+        /// </remarks>
+        internal async UniTask WaitForBootRefreshAsync(CancellationToken ct)
+        {
+            while (!_bootRefreshFinished)
+            {
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+            }
+        }
 
         private void Awake()
         {
@@ -70,8 +130,7 @@ namespace PeerPlay.Popups.App
                 .Register("fade", new FadeTransition())
                 .Register("scale_pop", new ScalePopTransition());
 
-            PopupConfigCache cache =
-                new PopupConfigCache(Path.Combine(Application.persistentDataPath, "popup-config.json"));
+            PopupConfigCache cache = new PopupConfigCache(CacheFilePath);
             PopupConfigValidator validator = new PopupConfigValidator(_transitions);
             ICatalogProbe probe = _useRemote ? new AddressablesCatalogProbe() : null;
 
@@ -84,11 +143,11 @@ namespace PeerPlay.Popups.App
 
             _images = new RemoteImageSource(http, new SpriteLruCache(8));
 
-            IPopupViewSource source = _useRemote
+            _source = _useRemote
                 ? new RefCountedViewSource(new AddressablesPrefabLoader())
                 : (IPopupViewSource)_localSource;
 
-            _factory = new PooledPopupViewFactory(_layer, _catalog, source, _transitions, text, _images);
+            _factory = new PooledPopupViewFactory(_layer, _catalog, _source, _transitions, text, _images);
 
             // Three arguments: the queue has no time-dependent behaviour, so the clock goes to the policy
             // that actually reads it.
@@ -100,18 +159,28 @@ namespace PeerPlay.Popups.App
             // Raises Adopted, so the overrides are live from the first frame and not only once the network
             // has answered.
             _config.AdoptBestAvailable();
+            ColdStartSource = _config.CurrentSource;
 
             BootAsync(this.GetCancellationTokenOnDestroy()).Forget();
         }
 
         private async UniTaskVoid BootAsync(CancellationToken ct)
         {
-            if (_useRemote)
+            try
             {
-                await _config.InitializeAddressablesAsync(ct);
-            }
+                if (_useRemote)
+                {
+                    await _config.InitializeAddressablesAsync(ct);
+                }
 
-            await _config.RefreshAsync(ct);
+                BootResult = await _config.RefreshAsync(ct);
+            }
+            finally
+            {
+                // In the finally, so a cancelled boot releases whoever is waiting on it instead of leaving
+                // them parked for the rest of the session.
+                _bootRefreshFinished = true;
+            }
         }
 
         private void OnDestroy()

@@ -76,5 +76,19 @@ namespace PeerPlay.Popups.Sourcing
                 _cooldownUntil[family] = _clock.UtcNow.AddSeconds(rule.CooldownSeconds);
             }
         }
+
+        /// <summary>
+        /// Forgets every cap and cooldown taken so far. Both dictionaries, because a cap and a cooldown are
+        /// two halves of one rule and clearing one leaves the popup refused by the other.
+        ///
+        /// The product case is an account switch inside a running session: the counters are per-instance and
+        /// a config republish does not touch them, so the incoming player would inherit the outgoing player's
+        /// "already seen the weekend offer" for the rest of the session.
+        /// </summary>
+        public void ResetSessionState()
+        {
+            _shownThisSession.Clear();
+            _cooldownUntil.Clear();
+        }
     }
 }

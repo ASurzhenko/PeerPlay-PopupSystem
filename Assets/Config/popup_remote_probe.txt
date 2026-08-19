@@ -1,0 +1,1 @@
+peerplay remote catalog sentinel — presence of this address means the remote catalog loaded

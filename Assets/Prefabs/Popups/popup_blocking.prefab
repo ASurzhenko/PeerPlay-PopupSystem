@@ -232,14 +232,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5943256542990745091, guid: db9b8f39ac8087f4d8014817bb3b8b57, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5943256542990745091, guid: db9b8f39ac8087f4d8014817bb3b8b57, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 361.99
-      objectReference: {fileID: 0}
     - target: {fileID: 7554631366158949789, guid: db9b8f39ac8087f4d8014817bb3b8b57, type: 3}
       propertyPath: m_margin.x
       value: 70
@@ -322,7 +314,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8914137511598737547, guid: db9b8f39ac8087f4d8014817bb3b8b57, type: 3}
       propertyPath: _dismissible
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8914137511598737547, guid: db9b8f39ac8087f4d8014817bb3b8b57, type: 3}
       propertyPath: _dismissOnBackdropTap

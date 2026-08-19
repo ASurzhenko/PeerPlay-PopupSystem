@@ -6,6 +6,13 @@ bad remote publish cannot take the popups away.
 `Unity 6000.0.64f1` · UniTask · DOTween · Addressables · UGUI + TextMeshPro · Android / Editor.
 A test-task deliverable: the system and a demonstration scene, no gameplay.
 
+| | | |
+|:--:|:--:|:--:|
+| ![The demo board: queue state, and one control per graded capability](Docs/01-demo-board.png) | ![A malformed publish rejected with the parser's own reason while the kill switch it followed stays adopted](Docs/02-incident-config-rejected.png) | ![The offer popup on screen with the CDN image already landed in it](Docs/03-remote-content.png) |
+| **The board.** Every graded capability has a control, and the panel above them shows the queue as it is: what holds the slot, in which lifecycle state, and what waits behind it. | **The publish that would have broken a live game.** A malformed config is refused — with the parser's own reason — and the last known good one keeps serving. The kill switch published before it stayed adopted. | **Remote content.** The popup opened on a local prefab immediately; the image arrived from CloudFront afterwards and landed into it. Nothing waited on the network. |
+
+Screenshots are from the Android build; the same scene runs in the Editor.
+
 ---
 
 ## Run it in 60 seconds
@@ -330,6 +337,11 @@ Named because they were chosen, not missed.
 16. **The demo's config fixtures are Editor/desktop only.** They are read from `streamingAssetsPath`, which on
     Android is a URL inside the APK rather than a filesystem path. The popup system has no such limitation;
     the fixtures exist so the incident beats work with no network. Detail in `DECISIONS.md`.
+17. **Android's hardware back button does not reach the demo.** The Escape binding reads
+    `Keyboard.current`, and a phone reports no keyboard device at all, so it never fires there. Escape works
+    on desktop and the on-screen Back control works everywhere. Routing the hardware key properly means an
+    Input System action asset, which this demo deliberately does not ship — the popup system's back handling
+    is one call (`CloseTop`), and what is missing is only the platform binding in front of it.
 
 ---
 
@@ -360,11 +372,14 @@ Assets/
   Config/                       the built-in default config that ships in the player
   StreamingAssets/DemoConfigs/  fixtures for the incident beats
 Tools/                          the reports the evidence section cites
+Docs/                           the screenshots at the top of this file
 ```
 
 The system's own package dependencies beyond the 2D URP template are **UniTask** (async) and **Addressables**
-(remote assets); the template's own packages are left as it shipped them, active input handling is `Both`, and
-nothing in the deliverable depends on the render pipeline. DOTween is vendored under `Assets/Plugins/Demigiant` — the free version
+(remote assets); the template's own packages are left as it shipped them, and nothing in the deliverable
+depends on the render pipeline. Active input handling is **Input System Package (New)** — the template ships
+its UI input module, and `Both` is a configuration Unity flags as unsupported on Android, so the project
+commits to one backend rather than carrying two. DOTween is vendored under `Assets/Plugins/Demigiant` — the free version
 **1.3.030**, licence at `dotween.demigiant.com/license.php` — because without it the project does not compile
 on clone. The font is **Fredoka** under the SIL Open Font License, with the licence file beside it at
 `Assets/Fonts/Fredoka-OFL.txt`. The UI art was generated for this project rather than taken from a store pack,

@@ -45,6 +45,7 @@ namespace PeerPlay.Popups.App.Demo
             _onTablet = Wire(_tablet34Button, 3f / 4f, "3:4 tablet");
 
             Apply(9f / 16f, "9:16 phone (reference)");
+            Highlight(_phone916Button);
         }
 
         private void OnDestroy()
@@ -61,7 +62,11 @@ namespace PeerPlay.Popups.App.Demo
                 return null;
             }
 
-            UnityEngine.Events.UnityAction handler = () => Apply(widthOverHeight, label);
+            UnityEngine.Events.UnityAction handler = () =>
+            {
+                Apply(widthOverHeight, label);
+                Highlight(button);
+            };
             button.onClick.AddListener(handler);
             return handler;
         }
@@ -87,6 +92,11 @@ namespace PeerPlay.Popups.App.Demo
             _caption.text = clamped
                 ? $"{label} — {wanted:0} units of height, clamped to {height:0} by the game view"
                 : $"{label} — {height:0} units of height";
+        }
+
+        private void Highlight(Button selected)
+        {
+            DemoSegmentedHighlight.Apply(selected, _tall2109Button, _phone916Button, _tablet34Button);
         }
 
         private static void Resize(RectTransform frame, float height)

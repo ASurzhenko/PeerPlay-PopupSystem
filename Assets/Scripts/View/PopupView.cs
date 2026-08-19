@@ -543,6 +543,7 @@ namespace PeerPlay.Popups.View
             if (_contentImage != null)
             {
                 _contentImage.sprite = sprite;
+                _contentImage.enabled = sprite != null;
             }
         }
 
@@ -561,11 +562,17 @@ namespace PeerPlay.Popups.View
             _unavailableLabel.gameObject.SetActive(visible);
         }
 
+        /// <summary>
+        /// A popup with no placeholder leaves an EMPTY slot, not a blank quad: an Image with a null sprite
+        /// still draws its tint, and a decorative stand-in is worse than nothing here — it makes the arrival
+        /// of remote content read as one picture swapping for another instead of as content landing.
+        /// </summary>
         private void RestorePlaceholder()
         {
             if (_contentImage != null)
             {
                 _contentImage.sprite = _placeholderSprite;
+                _contentImage.enabled = _placeholderSprite != null;
             }
         }
 

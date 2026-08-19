@@ -16,23 +16,23 @@ MonoBehaviour:
   - KeyId: info
     AssetId: popup_info
     ImageUrl: 
-    TitleKey: info.title
-    BodyKey: info.body
+    TitleKey: Info
+    BodyKey: A local popup. Modal, dismissible, transition chosen by the config.
   - KeyId: confirm
     AssetId: popup_confirm
     ImageUrl: 
-    TitleKey: confirm.title
-    BodyKey: confirm.body
+    TitleKey: Confirm
+    BodyKey: ConfirmData carried this line. Typed payload, no cast at the call site.
   - KeyId: reward
     AssetId: popup_reward
     ImageUrl: 
-    TitleKey: reward.title
-    BodyKey: reward.body
+    TitleKey: Reward
+    BodyKey: RewardData carried the amount and the currency.
   - KeyId: offer_weekend
     AssetId: popup_offer
     ImageUrl: https://d2eupgfrfppc7x.cloudfront.net/peerplay/content/offer_weekend.png
-    TitleKey: offer.weekend.title
-    BodyKey: offer.weekend.body
+    TitleKey: Weekend offer
+    BodyKey: The image is fetched after this popup is already on screen.
   - KeyId: queue_low
     AssetId: popup_info
     ImageUrl: 
@@ -51,8 +51,8 @@ MonoBehaviour:
   - KeyId: info_blocking
     AssetId: popup_blocking
     ImageUrl: 
-    TitleKey: Non-dismissible
-    BodyKey: Escape and the backdrop both refuse this popup.
+    TitleKey: Backdrop-proof
+    BodyKey: The backdrop and Escape refuse. Only this popup's own button closes it.
   - KeyId: info_modeless
     AssetId: popup_info
     ImageUrl: 

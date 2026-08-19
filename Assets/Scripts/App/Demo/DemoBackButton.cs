@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace PeerPlay.Popups.App.Demo
@@ -34,9 +35,16 @@ namespace PeerPlay.Popups.App.Demo
             }
         }
 
+        /// <summary>
+        /// Escape on a desktop keyboard and the Android system back button arrive on the same key. The
+        /// null check is not defensive noise: a phone reports no keyboard device at all, so reading
+        /// Keyboard.current unguarded is a NullReferenceException on the platform this is built for.
+        /// </summary>
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            Keyboard keyboard = Keyboard.current;
+
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
                 Back();
             }

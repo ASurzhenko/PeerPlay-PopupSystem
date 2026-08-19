@@ -92,9 +92,12 @@ namespace PeerPlay.Popups.App.Demo
             Wire(_malformedButton, "malformed");
             Wire(_killSwitchButton, "killswitch");
             Wire(_deadImageButton, "dead_image");
-            Wire(_instantButton, "transition_instant");
-            Wire(_fadeButton, "transition_fade");
-            Wire(_scaleButton, "transition_scale");
+            // The transition row is a mutually exclusive choice, so it says which member is current.
+            // The publish row above it is not: those are one-shot actions, and tinting one of them
+            // "selected" would claim a state the system does not hold.
+            WireTransition(_instantButton, "transition_instant");
+            WireTransition(_fadeButton, "transition_fade");
+            WireTransition(_scaleButton, "transition_scale");
             Wire(_liveCdnButton, PublishFromLiveCdn);
             Wire(_breakNetworkButton, BreakTheNetwork);
 
@@ -269,6 +272,15 @@ namespace PeerPlay.Popups.App.Demo
         private void Wire(Button button, string fixtureName)
         {
             Wire(button, () => Publish(fixtureName));
+        }
+
+        private void WireTransition(Button button, string fixtureName)
+        {
+            Wire(button, () =>
+            {
+                Publish(fixtureName);
+                DemoSegmentedHighlight.Apply(button, _instantButton, _fadeButton, _scaleButton);
+            });
         }
 
         private void Wire(Button button, UnityEngine.Events.UnityAction handler)

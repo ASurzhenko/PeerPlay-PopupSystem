@@ -10,7 +10,7 @@ namespace PeerPlay.Popups.Tests
 {
     /// <summary>
     /// The example tests around the floor: the remaining edge cases from the design, and one named
-    /// regression per defect the review rounds found.
+    /// regression per defect that was found and fixed.
     /// </summary>
     internal sealed class PopupCoreTests
     {

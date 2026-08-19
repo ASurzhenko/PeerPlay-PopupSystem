@@ -235,8 +235,8 @@ namespace PeerPlay.Popups.EditorTools
         /// The BEFORE half of the measurement. A clean analyze proves nothing on its own — it is the
         /// result you get whether or not the atlas entry is doing any work. This temporarily un-marks the
         /// atlas so it becomes an implicit dependency of both groups, re-runs the rule, and restores it.
-        /// If the "before" number is also zero then the atlas entry is not what is preventing duplication
-        /// and §2.3's whole argument needs re-examining.
+        /// If the "before" number is also zero then the atlas entry is not what is preventing duplication,
+        /// and the reason the groups are laid out this way needs re-examining.
         /// </summary>
         [MenuItem("Tools/PeerPlay/Analyze Duplicates — Before/After")]
         internal static void AnalyzeBeforeAfter()

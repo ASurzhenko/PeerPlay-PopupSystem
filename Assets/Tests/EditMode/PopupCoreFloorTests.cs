@@ -8,7 +8,7 @@ namespace PeerPlay.Popups.Tests
 {
     /// <summary>
     /// The floor: the tests the deliverable is not allowed to ship without. Each one either covers a
-    /// spec sentence directly or pins a defect that a review round found.
+    /// spec sentence directly or pins a defect that was found and fixed.
     /// </summary>
     internal sealed class PopupCoreFloorTests
     {

@@ -355,6 +355,127 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
             Assert.AreEqual(HttpFailure.Http4xx, missing.Failure);
         }
 
+        /// <summary>
+        /// The two bounds share one visible outcome, so nothing about a passing run says which of them fired.
+        /// This is the only place the ordering between them is checked at all: delete the clamp and a caller
+        /// asking for the deadline gets it, the per-request timeout stops being reachable, and every failure
+        /// still looks exactly the same from outside.
+        /// </summary>
+        [Test]
+        public void S7d_APerRequestTimeoutIsForcedBelowTheWholeOperationDeadline()
+        {
+            FakeHttp asked = new FakeHttp();
+            asked.Script(HttpResult.Success(200, Array.Empty<byte>()));
+
+            LogAssert.ignoreFailingMessages = true;
+            new HttpWithRetry(asked, new FakeDelayProvider())
+                .GetAsync("https://x/c.json", (int)HttpWithRetry.Deadline.TotalSeconds, CancellationToken.None)
+                .GetAwaiter().GetResult();
+            LogAssert.ignoreFailingMessages = false;
+
+            Assert.AreEqual(1, asked.Timeouts.Count);
+            Assert.Less(asked.Timeouts[0], (int)HttpWithRetry.Deadline.TotalSeconds,
+                        "a per-request timeout at the deadline makes the deadline win every time");
+            Assert.AreEqual(HttpWithRetry.MaxRequestTimeoutSeconds, asked.Timeouts[0]);
+
+            FakeHttp under = new FakeHttp();
+            under.Script(HttpResult.Success(200, Array.Empty<byte>()));
+
+            new HttpWithRetry(under, new FakeDelayProvider())
+                .GetTextureAsync("https://x/i.png", 5, CancellationToken.None).GetAwaiter().GetResult();
+
+            Assert.AreEqual(5, under.Timeouts[0], "a timeout already below the deadline is passed through");
+        }
+
+        /// <summary>
+        /// The other end of the same hole. UnityWebRequest reads a timeout of 0 as "no timeout at all", so a
+        /// caller passing 0 — a defaulted field, a config that failed to parse — would delete the inner bound
+        /// just as surely as one passing the deadline, and every failure would still look identical.
+        /// </summary>
+        [Test]
+        public void S7d2_ATimeoutOfZeroOrLessIsRaisedIntoTheRangeWhereItCanFire()
+        {
+            FakeHttp zero = new FakeHttp();
+            zero.Script(HttpResult.Success(200, Array.Empty<byte>()));
+
+            LogAssert.ignoreFailingMessages = true;
+            new HttpWithRetry(zero, new FakeDelayProvider())
+                .GetAsync("https://x/c.json", 0, CancellationToken.None).GetAwaiter().GetResult();
+
+            FakeHttp negative = new FakeHttp();
+            negative.Script(HttpResult.Success(200, Array.Empty<byte>()));
+
+            new HttpWithRetry(negative, new FakeDelayProvider())
+                .GetAsync("https://x/c.json", -3, CancellationToken.None).GetAwaiter().GetResult();
+            LogAssert.ignoreFailingMessages = false;
+
+            Assert.AreEqual(HttpWithRetry.MinRequestTimeoutSeconds, zero.Timeouts[0],
+                            "0 is UnityWebRequest's 'no timeout', which is the bound going missing");
+            Assert.AreEqual(HttpWithRetry.MinRequestTimeoutSeconds, negative.Timeouts[0]);
+        }
+
+        /// <summary>
+        /// The backoff table is indexed by the attempt number, so its size is a function of the attempt
+        /// count rather than a coincidence. Raising MaxAttempts alone throws on the third failure — at the
+        /// far end of a retry path that only runs when the network is already misbehaving.
+        /// </summary>
+        [Test]
+        public void S7e_TheBackoffTableIsSizedToTheAttemptCount()
+        {
+            Assert.AreEqual(HttpWithRetry.MaxAttempts - 1, HttpWithRetry.BackoffCount,
+                            "one wait per gap between attempts");
+        }
+
+        /// <summary>
+        /// The other half of the same defect, and the half no other test can see. A stoppable timer is worth
+        /// nothing if the caller never stops it: drop the <c>using</c> around the budget in
+        /// <see cref="HttpWithRetry"/> and the timer outlives the token source it is armed on, which is the
+        /// ObjectDisposedException-after-a-successful-request defect this change exists to close. Nothing
+        /// about the request itself changes, so every other assertion in the suite stays green.
+        /// </summary>
+        [Test]
+        public void S7g_TheBudgetIsDisarmedWhenTheRequestFinishesFirst()
+        {
+            FakeHttp http = new FakeHttp();
+            http.Script(HttpResult.Success(200, Array.Empty<byte>()));
+            FakeDelayProvider delays = new FakeDelayProvider();
+
+            HttpResult result = new HttpWithRetry(http, delays)
+                .GetAsync("https://x/c.json", 5, CancellationToken.None).GetAwaiter().GetResult();
+
+            Assert.IsTrue(result.Ok, "the request has to succeed, or this asserts the cancelled path instead");
+            Assert.AreEqual(HttpWithRetry.Deadline, delays.DeadlineRequested.Value, "the budget was armed");
+            Assert.AreEqual(1, delays.DisarmCount,
+                            "a request that beat its budget must disarm it; an armed timer outlives the " +
+                            "token source and fires into a disposed one");
+        }
+
+        /// <summary>
+        /// The budget must come back as a timer, because a timer is the only form of it that can be stopped.
+        /// The defect this pins was a handle that did nothing: the timer stayed armed after the request had
+        /// finished and its token source had been disposed, and fired one deadline later into a disposed
+        /// source — an ObjectDisposedException on the player loop after a request that SUCCEEDED.
+        ///
+        /// The firing itself is deliberately not asserted here: EditMode does not pump the player loop the
+        /// timer runs on, so a test claiming to watch it expire would be asserting nothing. What is checked
+        /// is the property that made the defect possible — the type of the handle.
+        /// </summary>
+        [Test]
+        public void S7f_TheDeadlineComesBackAsAStoppableTimer()
+        {
+            RealtimeDelayProvider delays = new RealtimeDelayProvider();
+
+            using (CancellationTokenSource cts = new CancellationTokenSource())
+            {
+                IDisposable handle = delays.CancelAfter(cts, HttpWithRetry.Deadline);
+
+                Assert.IsInstanceOf<PlayerLoopTimer>(handle,
+                    "CancelAfterSlim hands back no handle, so the timer outlives the source it was armed on");
+
+                handle.Dispose();
+            }
+        }
+
         private GameObject NewGameObject(string name)
         {
             GameObject go = new GameObject(name);

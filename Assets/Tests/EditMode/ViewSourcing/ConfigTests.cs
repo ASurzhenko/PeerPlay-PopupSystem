@@ -36,22 +36,13 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
             Directory.CreateDirectory(_tempDir);
         }
 
-        /// <summary>
-        /// Every rejection logs an error naming the rule and the offender — that is the point of the logs,
-        /// and the reason a refusal is diagnosable at all. It is not what these tests assert, so they opt
-        /// out of failing on it. Set per test rather than in SetUp: the framework resets the flag when it
-        /// opens the test's own log scope, which happens after SetUp has run.
-        /// </summary>
-        private static void ExpectRejectionLogs()
-        {
-            LogAssert.ignoreFailingMessages = true;
-        }
+        // These tests do NOT suppress logs. A refusal is a warning, which the framework lets through, so an
+        // ERROR reaching this class fails the test that produced it — which is the point: the one thing
+        // worth being told about here is a refusal turning back into a lost config.
 
         [TearDown]
         public void TearDown()
         {
-            LogAssert.ignoreFailingMessages = false;
-
             try
             {
                 if (Directory.Exists(_tempDir))
@@ -69,7 +60,6 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
 
         private bool Validate(string json, out string reason)
         {
-            ExpectRejectionLogs();
             return _validator.TryValidateStructure(json, out _, out reason);
         }
 
@@ -235,8 +225,6 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         [Test]
         public void C12_ABrokenPublishLeavesTheLastKnownGoodInPlace()
         {
-            ExpectRejectionLogs();
-
             FakeHttp http = new FakeHttp();
             string golden = ConfigJson.Golden();
             http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(golden)));
@@ -255,6 +243,37 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
             Assert.IsFalse(broken.Adopted);
             Assert.AreSame(good, service.Current, "the snapshot is not swapped for a rejected payload");
             StringAssert.Contains("offer_weekend", File.ReadAllText(CachePath), "and the cache still holds the good copy");
+        }
+
+        /// <summary>
+        /// A publish that never arrives leaves the live config serving, so it is a warning — and the level
+        /// is asserted rather than assumed, because nothing else in the suite would notice it being raised
+        /// back to an error. `LogAssert` fails the test twice over if that happens: once for the error
+        /// nobody expected, once for the warning that never came.
+        /// </summary>
+        [Test]
+        public void C12b_AFetchThatNeverArrivesWarnsAndLeavesTheLiveConfigServing()
+        {
+            FakeHttp http = new FakeHttp();
+            string golden = ConfigJson.Golden();
+            http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(golden)));
+            http.Script(HttpResult.Fail(HttpFailure.Transport, "no route"));
+
+            PopupConfigCache cache = new PopupConfigCache(CachePath);
+            RemotePopupConfigService service = new RemotePopupConfigService(
+                Text(golden), cache, _validator, http, new FakeCatalogProbe { Ready = true },
+                "https://cdn/config.json");
+
+            service.RefreshAsync(CancellationToken.None).GetAwaiter().GetResult();
+            PopupConfigSnapshot live = service.Current;
+
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("fetch failed"));
+
+            ConfigFetchResult failed = service.RefreshAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+            Assert.IsFalse(failed.Adopted);
+            Assert.AreEqual(ConfigFetchOutcome.Rejected, failed.Outcome);
+            Assert.AreSame(live, service.Current, "a failed fetch must not disturb what is already serving");
         }
 
         [Test]
@@ -307,8 +326,6 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         [Test]
         public void C14_ACorruptCacheFallsBackToTheBuiltInAndTheNextGoodFetchRewritesIt()
         {
-            ExpectRejectionLogs();
-
             File.WriteAllText(CachePath, "{ not json");
 
             FakeHttp http = new FakeHttp();
@@ -403,8 +420,6 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         [Test]
         public void C16b_WhenTheCatalogsAreReadyAnUnresolvableAssetRejectsTheConfig()
         {
-            ExpectRejectionLogs();
-
             FakeHttp http = new FakeHttp();
             string golden = ConfigJson.Golden();
             http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(golden)));
@@ -429,8 +444,6 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         [Test]
         public void C17_AConfigAdoptedWithoutAssetResolutionIsNotPersistedAsLastKnownGood()
         {
-            ExpectRejectionLogs();
-
             FakeHttp http = new FakeHttp();
             string golden = ConfigJson.Golden();
             http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(golden)));
@@ -557,8 +570,6 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         [Test]
         public void C20_TheThreeOutcomesAreDistinguishable()
         {
-            ExpectRejectionLogs();
-
             FakeHttp http = new FakeHttp();
             http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes(ConfigJson.Golden())));
             http.Script(HttpResult.Success(200, Encoding.UTF8.GetBytes("{\"version\":1,\"popups\":[]}")));

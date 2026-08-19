@@ -5,7 +5,9 @@
         "PeerPlay.Popups",
         "PeerPlay.Popups.View",
         "PeerPlay.Popups.Sourcing",
-        "UniTask"
+        "UniTask",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

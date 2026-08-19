@@ -97,12 +97,20 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
     internal sealed class FakeHttp : IHttpClient
     {
         internal readonly Queue<HttpResult> Scripted = new Queue<HttpResult>();
+
+        /// <summary>Every url asked for, in order — the half that proves WHICH endpoint a request went to.</summary>
+        internal readonly List<string> Urls = new List<string>();
+
         internal int RequestCount;
         internal int Aborts;
         internal bool Hold;
 
-        private readonly Queue<UniTaskCompletionSource<HttpResult>> _held =
-            new Queue<UniTaskCompletionSource<HttpResult>>();
+        // A list rather than a queue, so a test can complete the SECOND request first. Held requests do not
+        // finish in the order they started, and that reordering is the whole subject of C18.
+        private readonly List<UniTaskCompletionSource<HttpResult>> _held =
+            new List<UniTaskCompletionSource<HttpResult>>();
+
+        internal int HeldCount => _held.Count;
 
         internal void Script(HttpResult result)
         {
@@ -119,24 +127,35 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
 
         internal void CompleteHeld(HttpResult result)
         {
-            if (_held.Count > 0)
+            CompleteHeldAt(0, result);
+        }
+
+        /// <summary>Completes one held request by the order it started in — 0 is the oldest.</summary>
+        internal void CompleteHeldAt(int index, HttpResult result)
+        {
+            if (index < 0 || index >= _held.Count)
             {
-                _held.Dequeue().TrySetResult(result);
+                return;
             }
+
+            UniTaskCompletionSource<HttpResult> source = _held[index];
+            _held.RemoveAt(index);
+            source.TrySetResult(result);
         }
 
         public UniTask<HttpResult> GetAsync(string url, int timeoutSeconds, CancellationToken ct)
         {
-            return RespondAsync(ct);
+            return RespondAsync(url, ct);
         }
 
         public UniTask<HttpResult> GetTextureAsync(string url, int timeoutSeconds, CancellationToken ct)
         {
-            return RespondAsync(ct);
+            return RespondAsync(url, ct);
         }
 
-        private async UniTask<HttpResult> RespondAsync(CancellationToken ct)
+        private async UniTask<HttpResult> RespondAsync(string url, CancellationToken ct)
         {
+            Urls.Add(url);
             RequestCount++;
             ct.ThrowIfCancellationRequested();
 
@@ -148,13 +167,14 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
             }
 
             UniTaskCompletionSource<HttpResult> source = new UniTaskCompletionSource<HttpResult>();
-            _held.Enqueue(source);
+            _held.Add(source);
 
             using (ct.Register(() =>
             {
                 // The abort the real UnityWebRequest would perform. S2d asserts this counter, which is what
                 // makes "the fetch is cancellable" a claim about the request and not about the awaiter.
                 Aborts++;
+                _held.Remove(source);
                 source.TrySetCanceled();
             }))
             {
@@ -245,7 +265,37 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
         internal int InitCalls;
         internal int ResolveCalls;
 
+        /// <summary>
+        /// The resolution hop can be held, like the http one. Without it a supersede can only ever be
+        /// arranged across the HTTP await, so the check that sits after the resolution — the one guarding
+        /// the adoption and the cache write — is unreachable from a test.
+        /// </summary>
+        internal bool Hold;
+
+        private readonly List<UniTaskCompletionSource<bool>> _held =
+            new List<UniTaskCompletionSource<bool>>();
+
+        internal int HeldCount => _held.Count;
+
         public bool CatalogsReady => Ready;
+
+        internal void CompleteHeld(bool resolved)
+        {
+            CompleteHeldAt(0, resolved);
+        }
+
+        /// <summary>Completes one held resolution by the order it started in — 0 is the oldest.</summary>
+        internal void CompleteHeldAt(int index, bool resolved)
+        {
+            if (index < 0 || index >= _held.Count)
+            {
+                return;
+            }
+
+            UniTaskCompletionSource<bool> source = _held[index];
+            _held.RemoveAt(index);
+            source.TrySetResult(resolved);
+        }
 
         public UniTask InitializeAsync(CancellationToken ct)
         {
@@ -253,10 +303,26 @@ namespace PeerPlay.Popups.ViewSourcing.Tests
             return UniTask.CompletedTask;
         }
 
-        public UniTask<bool> TryResolveAllAsync(IReadOnlyList<string> assetIds, CancellationToken ct)
+        public async UniTask<bool> TryResolveAllAsync(IReadOnlyList<string> assetIds, CancellationToken ct)
         {
             ResolveCalls++;
-            return UniTask.FromResult(ResolveAll);
+
+            if (!Hold)
+            {
+                return ResolveAll;
+            }
+
+            UniTaskCompletionSource<bool> source = new UniTaskCompletionSource<bool>();
+            _held.Add(source);
+
+            using (ct.Register(() =>
+            {
+                _held.Remove(source);
+                source.TrySetCanceled();
+            }))
+            {
+                return await source.Task;
+            }
         }
     }
 

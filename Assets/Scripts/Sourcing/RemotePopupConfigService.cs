@@ -7,25 +7,57 @@ using UnityEngine;
 
 namespace PeerPlay.Popups.Sourcing
 {
+    /// <summary>
+    /// Three outcomes, not two. A config that was REFUSED and an answer that was merely IGNORED are
+    /// different events — the first one is the payload's fault and is what the validator exists to catch,
+    /// the second is this service correctly discarding a stale continuation. A caller that can only ask
+    /// "was it adopted?" has to report them with the same word.
+    /// </summary>
+    public enum ConfigFetchOutcome : byte
+    {
+        /// <summary>
+        /// No fetch has produced this result yet. Zero on purpose: a defaulted struct — a field nobody has
+        /// assigned, a result read before the request finished — must not claim the one outcome that says
+        /// something was written. The same reason ShowOptions offsets its priority so a defaulted struct
+        /// does not silently mean Low.
+        /// </summary>
+        Unknown = 0,
+
+        Adopted = 1,
+
+        /// <summary>The payload was fetched and refused — invalid, or its assets do not resolve.</summary>
+        Rejected = 2,
+
+        /// <summary>A newer endpoint or refresh took over while this one was in flight. Nothing was written.</summary>
+        Superseded = 3
+    }
+
     public readonly struct ConfigFetchResult
     {
-        public readonly bool Adopted;
+        public readonly ConfigFetchOutcome Outcome;
         public readonly string Reason;
 
-        private ConfigFetchResult(bool adopted, string reason)
+        private ConfigFetchResult(ConfigFetchOutcome outcome, string reason)
         {
-            Adopted = adopted;
+            Outcome = outcome;
             Reason = reason;
         }
 
+        public bool Adopted => Outcome == ConfigFetchOutcome.Adopted;
+
         public static ConfigFetchResult Ok()
         {
-            return new ConfigFetchResult(true, null);
+            return new ConfigFetchResult(ConfigFetchOutcome.Adopted, null);
         }
 
         public static ConfigFetchResult Fail(string reason)
         {
-            return new ConfigFetchResult(false, reason);
+            return new ConfigFetchResult(ConfigFetchOutcome.Rejected, reason);
+        }
+
+        public static ConfigFetchResult Stale(string reason)
+        {
+            return new ConfigFetchResult(ConfigFetchOutcome.Superseded, reason);
         }
     }
 
@@ -49,8 +81,13 @@ namespace PeerPlay.Popups.Sourcing
         private readonly PopupConfigValidator _validator;
         private readonly IHttpClient _http;
         private readonly ICatalogProbe _probe;
-        private readonly string _configUrl;
-        private readonly List<string> _assetIdScratch = new List<string>(16);
+        private string _configUrl;
+
+        /// <summary>
+        /// Bumped by the endpoint setter AND by every RefreshAsync, so only the newest request may adopt or
+        /// cache. See <see cref="ConfigUrl"/> for why a mutable endpoint on its own is not enough.
+        /// </summary>
+        private int _generation;
 
         public RemotePopupConfigService(TextAsset builtInDefault, PopupConfigCache cache,
                                         PopupConfigValidator validator, IHttpClient http,
@@ -67,6 +104,35 @@ namespace PeerPlay.Popups.Sourcing
         }
 
         public PopupConfigSnapshot Current { get; private set; }
+
+        /// <summary>
+        /// Which of the three sources produced <see cref="Current"/> — "cache", "built-in" or "remote".
+        /// Reported rather than inferred: the boot adoption happens inside Awake, before anything can
+        /// subscribe to <see cref="Adopted"/>, so a UI that wants to say which branch ran has no other way
+        /// to know, and guessing it from what was last requested is how a demo ends up claiming the cache
+        /// carried a boot the built-in default actually carried.
+        /// </summary>
+        public string CurrentSource { get; private set; } = "none";
+
+        /// <summary>
+        /// The endpoint, changeable while the system runs: pointing a LIVE service at another config is the
+        /// only way to show that a bad publish does not take the popups away — rebuilding the service per
+        /// publish would prove the opposite claim.
+        ///
+        /// A mutable URL alone would be a race, so the write bumps a generation that every in-flight request
+        /// re-checks before it adopts or writes the cache. Chosen over "capture the URL and compare it on
+        /// completion" because two requests can share one URL (pressing the same button twice) and the older
+        /// answer must still lose. An empty value keeps its existing meaning: no remote config.
+        /// </summary>
+        public string ConfigUrl
+        {
+            get => _configUrl;
+            set
+            {
+                _configUrl = value;
+                _generation++;
+            }
+        }
 
         /// <summary>Raised on EVERY adoption, the one at boot included — the view overrides depend on it.</summary>
         public event Action<PopupConfigSnapshot> Adopted;
@@ -110,12 +176,22 @@ namespace PeerPlay.Popups.Sourcing
 
         public async UniTask<ConfigFetchResult> RefreshAsync(CancellationToken ct)
         {
-            if (string.IsNullOrEmpty(_configUrl))
+            // Claimed before the first await, and compared after every one of them: this request owns the
+            // adoption only while nothing newer has been asked for.
+            int generation = ++_generation;
+            string url = _configUrl;
+
+            if (string.IsNullOrEmpty(url))
             {
                 return ConfigFetchResult.Fail("no config url");
             }
 
-            HttpResult response = await _http.GetAsync(_configUrl, HttpTimeoutSeconds, ct);
+            HttpResult response = await _http.GetAsync(url, HttpTimeoutSeconds, ct);
+
+            if (generation != _generation)
+            {
+                return Superseded(url);
+            }
 
             if (!response.Ok || response.Data == null)
             {
@@ -133,9 +209,23 @@ namespace PeerPlay.Popups.Sourcing
             }
 
             bool resolutionRan = ShouldRunAssetResolution(CatalogsReady);
+            bool resolved = !resolutionRan || await TryResolveAssetsAsync(snapshot, ct);
 
-            if (resolutionRan && !await TryResolveAssetsAsync(snapshot, ct))
+            // The second check, and the load-bearing one: Adopt and the cache write are the harmful writes,
+            // and nothing awaits between here and them.
+            //
+            // It comes BEFORE the resolution verdict is interpreted on purpose. A superseded request has
+            // been probing ids nobody asked for any more; blaming its config for "an assetId resolves to no
+            // location" would put a red line in the console naming the wrong cause.
+            if (generation != _generation)
             {
+                return Superseded(url);
+            }
+
+            if (!resolved)
+            {
+                Debug.LogError($"{nameof(RemotePopupConfigService)}.{nameof(RefreshAsync)} " +
+                               "[Config] rejected: an assetId resolves to no location");
                 return ConfigFetchResult.Fail("asset resolution failed");
             }
 
@@ -158,6 +248,17 @@ namespace PeerPlay.Popups.Sourcing
             }
 
             return ConfigFetchResult.Ok();
+        }
+
+        /// <summary>
+        /// A discarded answer is named, never silently dropped: "nothing happened" and "an older endpoint's
+        /// answer arrived and was refused" look identical from the outside, and only one of them is a bug.
+        /// </summary>
+        private ConfigFetchResult Superseded(string url)
+        {
+            string why = $"a newer endpoint or refresh replaced '{url}' while it was in flight";
+            Debug.LogWarning($"{nameof(RemotePopupConfigService)}.{nameof(RefreshAsync)} [Config] superseded — {why}");
+            return ConfigFetchResult.Stale(why);
         }
 
         /// <summary>
@@ -199,29 +300,29 @@ namespace PeerPlay.Popups.Sourcing
             return false;
         }
 
+        /// <remarks>
+        /// The id list is per call rather than a reused field. The probe iterates it across awaits, and
+        /// overlapping refreshes are now a supported state — a shared buffer would let a newer request
+        /// refill the list an older request's probe loop is still walking. It also does not log its own
+        /// verdict: whether a failed resolution is the config's fault is only knowable after the caller has
+        /// checked whether this request was superseded.
+        /// </remarks>
         private async UniTask<bool> TryResolveAssetsAsync(PopupConfigSnapshot snapshot, CancellationToken ct)
         {
-            _assetIdScratch.Clear();
+            List<string> assetIds = new List<string>(snapshot.Rules.Count);
 
             for (int i = 0; i < snapshot.Rules.Count; i++)
             {
-                _assetIdScratch.Add(snapshot.Rules[i].AssetId);
+                assetIds.Add(snapshot.Rules[i].AssetId);
             }
 
-            bool resolved = await _probe.TryResolveAllAsync(_assetIdScratch, ct);
-
-            if (!resolved)
-            {
-                Debug.LogError($"{nameof(RemotePopupConfigService)}.{nameof(TryResolveAssetsAsync)} " +
-                               "[Config] rejected: an assetId resolves to no location");
-            }
-
-            return resolved;
+            return await _probe.TryResolveAllAsync(assetIds, ct);
         }
 
         private void Adopt(PopupConfigSnapshot snapshot, string source)
         {
             Current = snapshot;
+            CurrentSource = source;
             Debug.Log($"{nameof(RemotePopupConfigService)}.{nameof(Adopt)} [Config] source={source} " +
                       $"popups={snapshot.Count}");
             Adopted?.Invoke(snapshot);

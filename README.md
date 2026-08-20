@@ -275,7 +275,7 @@ Not measured: no Memory Profiler snapshot, no native allocation accounting, no d
 
 The shared UI atlas is referenced by a local prefab **and** by the remote offer prefab. An asset that is
 implicit to two Addressables groups is packed into **both** bundles. Marking the atlas addressable in the
-local group fixed it, and the analyzer run is tracked in `Tools/addressables-dupe-report.json`:
+local group fixed it, and the analyzer run is tracked in [Tools/addressables-dupe-report.json](Tools/addressables-dupe-report.json):
 
 **duplicate bundle dependencies: 38 → 0.**
 
@@ -283,7 +283,7 @@ Both numbers are published on purpose. A bare zero would prove nothing — zero 
 never run prints.
 
 Texture compression is **ASTC 6×6**, verified as *applied* rather than merely requested
-(`Tools/uikit-build-report.json`: `overridden=True format=ASTC_6x6`). The atlas is packed with rotation off,
+([Tools/uikit-build-report.json](Tools/uikit-build-report.json): `overridden=True format=ASTC_6x6`). The atlas is packed with rotation off,
 tight packing off, alpha dilation on and 4 px padding, with a read-back verifier that throws if any of those
 drift — because with tight packing on, a concave sprite's bounding rectangle can contain a slice of its
 neighbour, and a UI `Image` samples the rectangle: foreign artwork appears inside icons.
@@ -336,7 +336,7 @@ Named because they were chosen, not missed.
 15. **Two of the fuzz's invariants are conditional** — described in full under Evidence.
 16. **The demo's config fixtures are Editor/desktop only.** They are read from `streamingAssetsPath`, which on
     Android is a URL inside the APK rather than a filesystem path. The popup system has no such limitation;
-    the fixtures exist so the incident beats work with no network. Detail in `DECISIONS.md`.
+    the fixtures exist so the incident beats work with no network. Detail in [DECISIONS.md](DECISIONS.md).
 17. **Android's hardware back button does not reach the demo.** The Escape binding reads
     `Keyboard.current`, and a phone reports no keyboard device at all, so it never fires there. Escape works
     on desktop and the on-screen Back control works everywhere. Routing the hardware key properly means an
@@ -353,7 +353,7 @@ a packed-build content pipeline.
 
 The task was described as a day's work; this took about two, and the extra day went into the tests, the
 measurement and the config-safety path rather than into breadth. Each line above is a decision with a reason
-in `DECISIONS.md`, not a gap.
+in [DECISIONS.md](DECISIONS.md), not a gap.
 
 ---
 
@@ -390,7 +390,7 @@ under a project-specific prefix.
 
 ---
 
-## `DECISIONS.md`
+## [DECISIONS.md](DECISIONS.md)
 
 One row per decision: what was chosen, why, and what it cost. It exists because the next conversation is built
 on this test, and "what it cost" is the column that is worth reading.

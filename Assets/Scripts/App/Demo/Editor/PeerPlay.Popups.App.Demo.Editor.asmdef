@@ -1,0 +1,19 @@
+{
+    "name": "PeerPlay.Popups.App.Demo.Editor",
+    "rootNamespace": "PeerPlay.Popups.App.Demo.Editor",
+    "references": [
+        "PeerPlay.Popups.App",
+        "Unity.Addressables.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Popups_Local
+  m_EditorClassIdentifier: 
+  m_GroupName: Popups_Local
+  m_GUID: edae38a11c6677b43911ec5f0831de0e
+  m_SerializeEntries:
+  - m_GUID: 0094fb0a77f943c4fbf5ff4552cad783
+    m_Address: popup_confirm
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2e9d7584309e9fb4e9a8485313d61768
+    m_Address: popup_reward
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6ff391f2c4a7ad94684c551f1f369496
+    m_Address: font_fredoka
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 73a67b14a86d1f24384e5a36d3ac904a
+    m_Address: popup_blocking
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 754a4961ba918f84e95974940d0795c8
+    m_Address: uikit_atlas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: db9b8f39ac8087f4d8014817bb3b8b57
+    m_Address: popup_info
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 2001d76037177f64dbb35e8a3325f83b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 6469c803cb0036f48b82cb3342a9f05b, type: 2}
+    - {fileID: 11400000, guid: 589a90a70283f004497a33f02e019158, type: 2}

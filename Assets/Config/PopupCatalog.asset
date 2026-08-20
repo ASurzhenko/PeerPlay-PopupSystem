@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d2dda14d47164840971d949b73e8e29, type: 3}
+  m_Name: PopupCatalog
+  m_EditorClassIdentifier: 
+  _entries:
+  - KeyId: info
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Info
+    BodyKey: A local popup. Modal, dismissible, transition chosen by the config.
+  - KeyId: confirm
+    AssetId: popup_confirm
+    ImageUrl: 
+    TitleKey: Confirm
+    BodyKey: ConfirmData carried this line. Typed payload, no cast at the call site.
+  - KeyId: reward
+    AssetId: popup_reward
+    ImageUrl: 
+    TitleKey: Reward
+    BodyKey: RewardData carried the amount and the currency.
+  - KeyId: offer_weekend
+    AssetId: popup_offer
+    ImageUrl: https://d2eupgfrfppc7x.cloudfront.net/peerplay/content/offer_weekend.png
+    TitleKey: Weekend offer
+    BodyKey: The image is fetched after this popup is already on screen.
+  - KeyId: queue_low
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Low priority
+    BodyKey: Submitted 1st, plays last.
+  - KeyId: queue_normal
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Normal priority
+    BodyKey: Submitted 2nd.
+  - KeyId: queue_critical
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Critical priority
+    BodyKey: Submitted 3rd, plays first.
+  - KeyId: info_blocking
+    AssetId: popup_blocking
+    ImageUrl: 
+    TitleKey: Backdrop-proof
+    BodyKey: The backdrop and Escape refuse. Only this popup's own button closes it.
+  - KeyId: info_modeless
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Modeless popup
+    BodyKey: 'No backdrop: the controls behind it still take input.'
+  - KeyId: stress
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Stress key
+    BodyKey: 'The measured key: modeless and instant.'
+  - KeyId: capped_daily
+    AssetId: popup_info
+    ImageUrl: 
+    TitleKey: Daily cap
+    BodyKey: maxPerSession is 1 in the demo config.

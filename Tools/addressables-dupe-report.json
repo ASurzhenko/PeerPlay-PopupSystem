@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "error": null,
+  "entries": [
+    "after  (atlas addressable):     duplicate_rows=0",
+    "before (atlas NOT addressable): duplicate_rows=38"
+  ]
+}

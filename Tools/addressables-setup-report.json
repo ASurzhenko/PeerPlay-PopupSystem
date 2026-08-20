@@ -1,0 +1,16 @@
+{
+  "status": "ok",
+  "error": null,
+  "entries": [
+    "profile Remote.LoadPath=https://d2eupgfrfppc7x.cloudfront.net/peerplay/[BuildTarget]",
+    "Popups_Local: popup_info <- Assets/Prefabs/Popups/popup_info.prefab",
+    "Popups_Local: popup_confirm <- Assets/Prefabs/Popups/popup_confirm.prefab",
+    "Popups_Local: popup_reward <- Assets/Prefabs/Popups/popup_reward.prefab",
+    "Popups_Local: uikit_atlas <- Assets/Art/Generated/UIKit.spriteatlasv2",
+    "Popups_Local: font_fredoka <- Assets/Fonts/Fredoka SDF.asset",
+    "Popups_Remote: popup_offer <- Assets/Prefabs/Popups/popup_offer.prefab",
+    "Popups_Remote: popup_remote_probe <- Assets/Config/popup_remote_probe.txt",
+    "verified: Popups_Remote -> Remote.LoadPath = https://d2eupgfrfppc7x.cloudfront.net/peerplay/[BuildTarget]",
+    "verified: Popups_Local -> Local.LoadPath"
+  ]
+}

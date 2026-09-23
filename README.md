@@ -1,10 +1,10 @@
-# PeerPlay — Advanced Popup System
+# Advanced Popup System
 
 A popup queue with priority-based sequencing, a strict lifecycle, and local + remote sourcing, built so that a
 bad remote publish cannot take the popups away.
 
 `Unity 6000.0.64f1` · UniTask · DOTween · Addressables · UGUI + TextMeshPro · Android / Editor.
-A test-task deliverable: the system and a demonstration scene, no gameplay.
+A self-directed engineering exercise: the system and a demonstration scene, no gameplay.
 
 | | | |
 |:--:|:--:|:--:|
